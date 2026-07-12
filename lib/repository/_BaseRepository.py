@@ -1,10 +1,12 @@
 from lib.database.DbService import DbService
 
 class BaseRepository:
-  def __init__(self, model_class, table_name):
+
+  def __init__(self, model_class, table_name, by_source_id: bool = False):
 
     self.model_class = model_class
     self.table_name = table_name
+    self.by_source_id = by_source_id
 
     self.data_list = []
     self.data_dict = {}
@@ -18,10 +20,12 @@ class BaseRepository:
     for item in raw_data:
       model = self.model_class(item)
       self.data_list.append(model)
-      self.data_dict[model.Id] = model
+      if self.by_source_id: self.data_dict[model.SourceId] = model
+      else: self.data_dict[model.Id] = model
 
   def count(self) -> int:
     return len(self.data_list)
 
-  def get_by_id(self, item_id):
+  def get_by_id(self, item_id: str | None):
+    if item_id is None: return None
     return self.data_dict[item_id]
