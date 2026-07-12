@@ -1,0 +1,16 @@
+from lib.repository.CompetitionRepository import CompetitionRepository
+from lib.repository.DriverRepository import DriverRepository
+from lib.repository.DriverLicenseRepository import DriverLicenseRepository
+from lib.repository.HorseRepository import HorseRepository
+from lib.repository.HorseSexRepository import HorseSexRepository
+from lib.repository.HorseTypeRepository import HorseTypeRepository
+from lib.repository.RaceRepository import RaceRepository
+from lib.repository.RaceCartTypeRepository import RaceCartTypeRepository
+from lib.repository.RaceCourseRepository import RaceCourseRepository
+from lib.repository.RaceGamblingLookup import RaceGamblingLookup
+from lib.repository.RaceGamblingTypeRepository import RaceGamblingTypeRepository
+from lib.repository.RaceParticipantRepository import RaceParticipantRepository
+from lib.repository.RaceResultsRepository import RaceResultsRepository
+from lib.repository.RaceStartTypeRepository import RaceStartTypeRepository
+
+from lib.repository.DataRegistry import DataRegistry
