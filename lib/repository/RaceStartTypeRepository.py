@@ -1,4 +1,4 @@
-from lib.repository._BaseRepository import BaseRepository
+from lib.repository.BaseRepository import BaseRepository
 from lib.models.RaceStartType import RaceStartType
 
 class RaceStartTypeRepository(BaseRepository):

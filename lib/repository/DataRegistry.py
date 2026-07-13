@@ -1,8 +1,7 @@
 import time
-from typing import Optional
-from tqdm.notebook import tqdm
+from tqdm.auto import tqdm
 
-# Importerer alle repositorier basert på dine PascalCase-filnavn
+from lib.repository import BaseRepository
 from lib.repository.CompetitionRepository import CompetitionRepository
 from lib.repository.DriverLicenseRepository import DriverLicenseRepository
 from lib.repository.DriverRepository import DriverRepository
@@ -11,69 +10,58 @@ from lib.repository.HorseSexRepository import HorseSexRepository
 from lib.repository.HorseTypeRepository import HorseTypeRepository
 from lib.repository.RaceCartTypeRepository import RaceCartTypeRepository
 from lib.repository.RaceCourseRepository import RaceCourseRepository
-from lib.repository.RaceGamblingLookup import RaceGamblingLookup  # Spesialklassen din
+from lib.repository.RaceGamblingLookup import RaceGamblingLookup
 from lib.repository.RaceGamblingTypeRepository import RaceGamblingTypeRepository
 from lib.repository.RaceParticipantRepository import RaceParticipantRepository
 from lib.repository.RaceRepository import RaceRepository
 from lib.repository.RaceResultsRepository import RaceResultsRepository
 from lib.repository.RaceStartTypeRepository import RaceStartTypeRepository
 
-
 class DataRegistry:
-    def __init__(self):
-        # Eksplisitt deklarasjon for C#-følelse og full IntelliSense i Notebooks
-        self.competitions: Optional[CompetitionRepository] = None
-        self.driver_licenses: Optional[DriverLicenseRepository] = None
-        self.drivers: Optional[DriverRepository] = None
-        self.horses: Optional[HorseRepository] = None
-        self.horse_sexes: Optional[HorseSexRepository] = None
-        self.horse_types: Optional[HorseTypeRepository] = None
-        self.race_cart_types: Optional[RaceCartTypeRepository] = None
-        self.race_courses: Optional[RaceCourseRepository] = None
-        self.race_gambling_lookup: Optional[RaceGamblingLookup] = None
-        self.race_gambling_types: Optional[RaceGamblingTypeRepository] = None
-        self.race_participants: Optional[RaceParticipantRepository] = None
-        self.races: Optional[RaceRepository] = None
-        self.race_results: Optional[RaceResultsRepository] = None
-        self.race_start_types: Optional[RaceStartTypeRepository] = None
 
-        # Mapping mellom feltnavn og selve klasse-typen for den autonome loopen
-        self._repo_mapping = {
-            "competitions": CompetitionRepository,
-            "driver_licenses": DriverLicenseRepository,
-            "drivers": DriverRepository,
-            "horses": HorseRepository,
-            "horse_sexes": HorseSexRepository,
-            "horse_types": HorseTypeRepository,
-            "race_cart_types": RaceCartTypeRepository,
-            "race_courses": RaceCourseRepository,
-            "race_gambling_lookup": RaceGamblingLookup,
-            "race_gambling_types": RaceGamblingTypeRepository,
-            "race_participants": RaceParticipantRepository,
-            "races": RaceRepository,
-            "race_results": RaceResultsRepository,
-            "race_start_types": RaceStartTypeRepository,
-        }
+  def __init__(self):
+    self.competitions = CompetitionRepository()
+    self.drivers = DriverRepository()
+    self.driver_licenses = DriverLicenseRepository()
+    self.horses = HorseRepository()
+    self.horse_sexes = HorseSexRepository()
+    self.horse_types = HorseTypeRepository()
+    self.race_carts = RaceCartTypeRepository()
+    self.race_courses = RaceCourseRepository()
+    self.race_gambling_lookup = RaceGamblingLookup()
+    self.race_gambling_types = RaceGamblingTypeRepository()
+    self.races = RaceRepository()
+    self.race_participants = RaceParticipantRepository()
+    self.races_results = RaceResultsRepository()
+    self.races_start_types = RaceStartTypeRepository()
 
-    def load_all(self):
-        """Laster alle 14 datatabeller sekvensielt inn i RAM med en grafisk progress bar."""
-        print("Starter opplasting av travdata til minnet...")
-        start_time = time.time()
+    self.__repo_map: dict[str, type[BaseRepository]] = {
+      "competitions": self.competitions,
+      "drivers": self.drivers,
+      "driver_licenses": self.driver_licenses,
+      "horses": self.horses,
+      "horse_sexes": self.horse_sexes,
+      "horse_types": self.horse_types,
+      "race_carts": self.race_carts,
+      "race_courses": self.race_courses,
+      "race_gambling_lookup": self.race_gambling_lookup,
+      "race_gambling_types": self.race_gambling_types,
+      "races": self.races,
+      "race_participants": self.race_participants,
+      "races_results": self.races_results,
+      "races_start_types": self.races_start_types,
+    }
 
-        # Oppretter Jupyter-progress bar
-        pbar = tqdm(self._repo_mapping.items(), desc="Total fremdrift", unit="repo")
+  def load_all(self):
+    print("Loading repo data...")
+    start_time = time.time()
 
-        for property_name, repo_class in pbar:
-            # Oppdaterer teksten over baren dynamisk for hver tabell
-            pbar.set_description(f"Laster {property_name}...")
+    progress = tqdm(self.__repo_map.items(), desc="Total progress")
 
-            # Instansierer klassen (trigger _load_data() og SQL-kall internt)
-            repo_instance = repo_class()
+    for name, repo in progress:
+      progress.set_description(f"Loading {name}...")
+      repo.load_data()
 
-            # Setter instansen på riktig egenskap (f.eks. self.horses = HorseRepository())
-            setattr(self, property_name, repo_instance)
+    duration = time.time() - start_time
+    print(f"Done in {duration:.2f} seconds")
 
-        duration = time.time() - start_time
-        print(
-            f"✅ Suksess! Alle tabeller er cachet i minnet på {duration:.2f} sekunder."
-        )

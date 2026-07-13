@@ -8,13 +8,11 @@ class BaseRepository:
     self.table_name = table_name
     self.by_source_id = by_source_id
 
-    self.data_list = []
-    self.data_dict = {}
+    self.data_list: list = []
+    self.data_dict: dict = {}
     self.query = f"SELECT * FROM {self.table_name}"
 
-    self._load_data()
-
-  def _load_data(self):
+  def load_data(self):
     db = DbService()
     raw_data = db.query(self.query)
     for item in raw_data:

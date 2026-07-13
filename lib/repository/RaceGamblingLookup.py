@@ -9,7 +9,7 @@ class RaceGamblingLookup:
 
     self.query = "SELECT * FROM Race_RaceGamblingType"
 
-  def _load_data(self):
+  def load_data(self):
     db = DbService()
     raw_data = db.query(self.query)
     for item in raw_data:

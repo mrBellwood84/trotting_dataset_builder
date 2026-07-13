@@ -1,4 +1,4 @@
-from lib.repository._BaseRepository import BaseRepository
+from lib.repository.BaseRepository import BaseRepository
 from lib.models.RaceCartType import RaceCartType
 
 class RaceCartTypeRepository(BaseRepository):
