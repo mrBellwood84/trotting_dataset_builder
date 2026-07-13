@@ -56,10 +56,9 @@ class DataRegistry:
     print("Loading repo data...")
     start_time = time.time()
 
-    progress = tqdm(self.__repo_map.items(), desc="Total progress")
+    progress = tqdm(self.__repo_map.items())
 
     for name, repo in progress:
-      progress.set_description(f"Loading {name}...")
       repo.load_data()
 
     duration = time.time() - start_time

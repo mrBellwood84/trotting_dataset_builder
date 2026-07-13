@@ -26,4 +26,7 @@ class BaseRepository:
 
   def get_by_id(self, item_id: str | None):
     if item_id is None: return None
-    return self.data_dict[item_id]
+    try:
+      return self.data_dict[item_id]
+    except KeyError:
+      return None
