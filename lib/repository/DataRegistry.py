@@ -1,4 +1,5 @@
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from tqdm.auto import tqdm
 
 from lib.repository import BaseRepository
@@ -35,32 +36,31 @@ class DataRegistry:
     self.races_results = RaceResultsRepository()
     self.races_start_types = RaceStartTypeRepository()
 
-    self.__repo_map: dict[str, type[BaseRepository]] = {
-      "competitions": self.competitions,
-      "drivers": self.drivers,
-      "driver_licenses": self.driver_licenses,
-      "horses": self.horses,
-      "horse_sexes": self.horse_sexes,
-      "horse_types": self.horse_types,
-      "race_carts": self.race_carts,
-      "race_courses": self.race_courses,
-      "race_gambling_lookup": self.race_gambling_lookup,
-      "race_gambling_types": self.race_gambling_types,
-      "races": self.races,
-      "race_participants": self.race_participants,
-      "races_results": self.races_results,
-      "races_start_types": self.races_start_types,
-    }
+    self.__repo_list = [
+      self.competitions,
+      self.drivers,
+      self.driver_licenses,
+      self.horses,
+      self.horse_sexes,
+      self.horse_types,
+      self.race_carts,
+      self.race_courses,
+      self.race_gambling_lookup,
+      self.race_gambling_types,
+      self.races,
+      self.race_participants,
+      self.races_results,
+      self.races_start_types,
+    ]
 
   def load_all(self):
-    print("Loading repo data...")
+    print("Loading data registry...")
     start_time = time.time()
+    progress = tqdm(self.__repo_list)
 
-    progress = tqdm(self.__repo_map.items())
-
-    for name, repo in progress:
+    for repo in progress:
       repo.load_data()
 
     duration = time.time() - start_time
-    print(f"Done in {duration:.2f} seconds")
+    print(f"Registry loading completed in {duration:.2f} seconds")
 
