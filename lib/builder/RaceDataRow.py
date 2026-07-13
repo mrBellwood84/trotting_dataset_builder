@@ -1,6 +1,5 @@
 import re
-from lib.models import Horse, Driver, DriverLicense, RaceParticipant, RaceResults, RaceCartType
-
+from lib.models import Horse, HorseSex, HorseType, Driver, DriverLicense, RaceParticipant, RaceResults, RaceCartType
 
 def parse_km_time(km_time: str | None):
   if km_time is None: return 0;
@@ -66,10 +65,10 @@ class RaceDataRow:
       self._trainer_year_of_birth = trainer.YearOfBirth
     if license is not None: self.trainer_license = license.Code
 
-  def resolve_horse_data(self, horse: Horse, sex: str, horse_type: str):
+  def resolve_horse_data(self, horse: Horse, horse_sex: HorseSex, horse_type: HorseType):
     self.horse_name = horse.Name
-    self.horse_sex = sex
-    self.horse_type = horse_type
+    if horse_sex is not None: self.horse_sex = horse_sex.Sex
+    if horse_type is not None: self.horse_type = horse_type
     self.horse_year_of_birth = horse.YearOfBirth
 
   def resolve_cart(self, cart_type: RaceCartType):
