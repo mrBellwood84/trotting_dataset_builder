@@ -1,4 +1,7 @@
 import re
+
+from pyparsing import results
+
 from lib.models import Horse, HorseSex, HorseType, Driver, DriverLicense, RaceParticipant, RaceResults, RaceCartType
 
 def parse_km_time(km_time: str | None):
@@ -9,6 +12,16 @@ def parse_km_time(km_time: str | None):
   cleaned = cleaned.replace(",", ".")
   number = float(cleaned)
   return number
+
+def clean_number(number: str | int | None) -> int | None:
+  if number is None: return None
+  try:
+    n = int(number)
+    if n == 0: return None
+    return n
+  except ValueError:
+    return None
+
 
 
 class RaceDataRow:
@@ -42,11 +55,10 @@ class RaceDataRow:
     self.hind_shoe = participant.HindShoe
 
     # results information
-    self.place = results.Place
+    self.place = clean_number(results.Place)
     self.km_time = parse_km_time(results.KmTime)
-    self.price = results.Price
-    self.odds = results.Odds
-    self.price = results.Price
+    self.odds = clean_number(results.Odds)
+    self.price = clean_number(results.Price)
 
     self.scratched = results.Scratched
     self.disqualified = results.Disqualified

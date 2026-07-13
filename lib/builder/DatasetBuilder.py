@@ -8,6 +8,20 @@ from lib.models.Race import Race
 from lib.models.RaceParticipant import RaceParticipant
 from lib.repository.DataRegistry import DataRegistry
 
+# look for race row data where top 3 positions exists in results
+def verify_race_row(data: list[RaceDataRow]) -> bool:
+
+  places = [x.place for x in data if x.place is not None]
+  if len(places) < 3: return False
+
+  places.sort()
+  first = places[0] == 1
+  second = places[1] == 2
+  third = places[2] == 3
+  if not (first and second and third): return False
+  return True
+
+
 class DatasetBuilder:
   def __init__(self, registry: DataRegistry, config: Config):
 
@@ -31,14 +45,19 @@ class DatasetBuilder:
       context = self._resolve_race_context(race)
       participants = self.registry.race_participants.get_participant_per_race(race.Id)
 
+      # ignore race if participants are less than limit
       if len(participants) < self.config.MIN_PARTICIPANTS:
         self.skipped_entries += 1
         continue
-      else: self.processed_entries += 1
 
       row_data = self._resolve_row_data(participants)
-      context.race_rows = row_data
 
+      # ignore race if top three places are missing from results
+      race_verified = verify_race_row(row_data)
+      if not race_verified: continue
+
+      self.processed_entries += 1
+      context.race_rows = row_data
       result.append(context)
 
     duration = time() - start_time
