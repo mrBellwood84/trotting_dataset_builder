@@ -32,5 +32,7 @@ class ApiAgent:
     url = f"{self.base_url}/{endpoint.lstrip('/')}"
     print(f"Unsafe request: {url}")
     response = requests.get(url)
+    code = response.status_code
+    print(f"Unsafe response: {code}")
     return response.json()
 
