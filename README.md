@@ -1,79 +1,56 @@
-# TrottingData – EquiPredict Pipeline
+# 🐍 Trotting CSV Builder
 
-Dette prosjektet er en høytytende, objektorientert feature engineering-pipeline utviklet for å foredle relasjonelle travdata fra en MySQL-database til flate, strukturerte datasett skreddersydd for maskinlæring (ML).
+Dette er en minimalistisk og uavhengig Python-klient utviklet for å hente ferdig foredlede og verifiserte løpsdata fra et eksternt C# API via JSON, for så å flate dem ut og skrive dem direkte til CSV-filer for maskinlæring.
 
-Målet med de endelige modellene er å predikere uavhengige sannsynligheter (prosentandeler) for:
-
-* **1. plass**
-* **2. plass**
-* **3. plass**
-* **Topp 3-plassering**
-
-*Merk: Alt av rå datainnhenting (skraping/ETL fra eksterne kilder) er utelatt fra dette repositoriet. Her jobbes det utelukkende med foredling og transformasjon av eksisterende data.*
+Prosjektet gjør ingen tung datavalidering, filtrering eller databasesøk under selve kjøringen. All kjerne-logikk er delegert til C#-backend.
 
 ---
 
-## 🏗️ Arkitektur og Designmønstre
+## 🏗️ Arkitektur & Dataflyt
 
-Prosjektet er bygget etter strenge enterprise-prinsipper for å sikre maksimal ytelse, unngå tause feil ved bruk av løse ordbøker (`dicts`), og forhindre *data leakage* under feature-genereringen.
-
-### 1. In-Memory Datalager & Repositorier (`lib/repository/`)
-
-For å unngå tunge SQL `JOIN`-operasjoner som kveler databasen ved store datamengder, benytter prosjektet seg av **Identity Map**- og **Repository**-mønstre.
-
-* Ved oppstart laster en felles **`DataRegistry`** samtlige tabeller rått inn i minnet (RAM) og indekserer dem.
-* Dette gir en lynrask **$O(1)$ oppslagstid** på tvers av hele kjøringen. Baseklassen automatiserer mappingen fra databasetupler til sterkt typede objekter.
-
-### 2. Domenemodeller (`lib/models/`)
-
-Hver tabell i databasen har en tilsvarende ren Python-modell. Disse klassene representerer de virkelige entitetene i travsporten (hester, kusker, lisenser, baner) og sikrer typesikkerhet gjennom hele applikasjonen.
-
-### 3. Builder-laget (`lib/builder/`)
-
-Dette er hjertet i feature engineering-pipelinen. Transformasjonen er fullstendig objektorientert:
-
-* **`DatasetBuilder`**: Hovedmotoren som orkestrerer byggeprosessen løp for løp, og håndterer avviste/ugyldige løp.
-* **`RaceContext`**: Representerer hele feltet for ett spesifikt løp. Her beregnes **relative features** (f.eks. hvem som har høyest vinnerprosent på startstreken) før dataene flates ut.
-* **`RaceDataRow`**: En sterkt typet dataklasse (DTO) som utgjør én rad i det endelige datasettet. Den garanterer riktig rekkefølge og kolonnenavn for eksport til Pandas.
-
----
-
-## 📂 Prosjektstruktur
-
-Applikasjonen er delt inn i logiske lag (separation of concerns):
+Selve datalinje-byggeren er 100 % frikoblet fra databasen og opererer utelukkende over HTTP:
 
 ```text
-.
-├── build_dataset.ipynb       # Interaktiv eksperimentering og pipeline-kjøring
-├── lib/
-│   ├── builder/              # Pipeline: Kapsler inn all Feature Engineering-logikk
-│   ├── database/             # I/O: Håndterer den rå MySQL-tilkoblingen
-│   ├── models/               # Entiteter: Sterkt typede domenemodeller
-│   └── repository/           # RAM-Cache: In-memory O(1) oppslag for sportshistorikk
-├── README.md
-└── requirements.txt
+[ C# API (Backend) ] ───( JSON via HTTP )───> [ Trotting CSV Builder ] ───> [ Eksport: CSV ]
 
 ```
 
----
-
-## 🧼 Datasanering og Robusthet
-
-Pipelinen håndterer aktivt ustrukturerte og støyende data fra sporten:
-
-* **Km-tid-parsing (`KmTime`):** Rådata som `"24,5a"` (autostart) eller `"36,4ag"` (galopp) blir automatisk renset for bokstaver og konvertert til lineære desimaltall (`float`). Avansert logikk konverterer også eldre minutt-formater (f.eks `"1.14,5"`) til korrekte sekunder.
-* **Ugyldige resultater / Avlysninger:** Hester som er strøket (`"STR"`), diskvalifisert (`"dg"`, `"g6 g"`) eller har brutt løpet (`"BR"`, `"br g"`) blir validert uten at programmet krasjer, slik at manglende verdier blir riktig representert som `None` / `NaN` for ML-modellen.
+* **Ren JSON-strøm:** Klienten ber om data, mottar strukturerte JSON-rekker, og dytter dem rett i en flat CSV-fil.
+* **Håndtering av tomme løp:** Hvis et løp eller en konkurranse ikke inneholder noen godkjente eller verifiserte data, returnerer C# API-et en tom liste (`[]`). Python-klienten hopper da bare elegant videre til neste iterasjon uten ekstra støy.
 
 ---
 
-## ⚙️ Konfigurasjon (.env)
+## ⚙️ Kjørestrategi (Pipeline-logikk)
 
-Prosjektet krever en `.env`-fil på rotmappen for å initialisere databasetilkoblingen automatisk:
+Siden databasen inneholder over 400 000 individuelle løp, er pipelinen strukturert rundt **konkurranser** (~77 000 stykker) for å minimere antall API-kall og sikre en mer effektiv kjøring:
+
+1. **Hent Konkurranser:** Skriptet gjør et innledende kall for å hente en liste over alle tilgjengelige `CompetitionID`-er.
+2. **Hent Løp per Konkurranse:** For hver unike konkurranse hentes listen med tilhørende `RaceID`-er.
+3. **Hent og Skriv Datalinjer:** Skriptet forespør de ferdige datarekkene for hvert enkelt `RaceID`, transformerer JSON-responsen til CSV-format, og appender (legger til) linjene fortløpende til filen.
+
+---
+
+## 🛠️ Standalone Verktøy (Notebooks)
+
+Prosjektet inkluderer også frittstående Jupyter Notebooks. Disse er **helt dekuplet** fra selve CSV-byggeren og kjøres kun manuelt ved behov:
+
+* Ad-hoc database-cleanup for å tette hull i dataene.
+* Identifisering og tildeling av anonyme/generiske profiler ("ghosts") til ukjente hester eller kusker direkte i MySQL.
+
+---
+
+## ⚙️ Konfigurasjon (`.env`)
+
+Opprett en `.env`-fil på rotmappen med endepunktet til API-et ditt (og eventuelle database-detaljer dedikert kun til cleanup-notebooks):
 
 ```env
-DB_HOST=host_address
-DB_USER=user
-DB_PASS=password
-DB_NAME=db_name
-```
+# API-tilkobling for CSV Builder
+API_BASE_URL=http://localhost:5000/api
 
+# Database (Kun brukt lokalt av cleanup-notebooks)
+DB_HOST=localhost
+DB_USER=ditt_brukernavn
+DB_PASS=ditt_passord
+DB_NAME=trotting_db
+
+```
