@@ -8,7 +8,7 @@ class ApiAgent:
     load_dotenv()
     self.base_url = os.getenv("API_BASE_URL")
 
-  def request_list(self, endpoint):
+  def request_many(self, endpoint) -> list:
     url = f"{self.base_url}/{endpoint.lstrip('/')}"
     try:
       list_response = requests.get(url)
@@ -18,7 +18,7 @@ class ApiAgent:
     except requests.exceptions.RequestException:
       return []
 
-  def request_single(self, endpoint):
+  def request_one(self, endpoint) -> dict:
     url = f"{self.base_url}/{endpoint.lstrip('/')}"
     try:
       single_response = requests.get(url)

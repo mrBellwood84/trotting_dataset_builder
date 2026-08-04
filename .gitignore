@@ -7,3 +7,4 @@
 /.idea/inspectionProfiles/profiles_settings.xml
 /.idea/TrottingData.iml
 /.idea/vcs.xml
+/data/racecard_dataset.parquet
